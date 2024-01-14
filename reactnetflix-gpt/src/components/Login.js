@@ -1,10 +1,46 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Header from "./Header";
+import { checkValidData } from "../utils/validate";
+import { auth } from "../utils/firebase.config";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 
 const Login = () => {
   const [isSignInForm, setIsSignInForm] = useState(true);
+  const [errorMessage, seterrorMessage] = useState(null);
+  const email = useRef(null);
+  const pass = useRef(null);
   const toggleSignIn = () => {
     setIsSignInForm(!isSignInForm);
+  };
+
+  const handleButtonClick = () => {
+    let emailValue = email.current.value;
+    let password = pass.current.value;
+    let message = checkValidData(emailValue, password);
+    seterrorMessage(message);
+    if (message) return;
+    if (!isSignInForm) {
+      createUserWithEmailAndPassword(auth, emailValue, password)
+        .then((userCredential) => {
+          // Signed up
+          const user = userCredential.user;
+          console.log("user: ", user);
+        })
+        .catch((error) => {
+          seterrorMessage(`${error.code}: ${error.message}`);
+        });
+    } else {
+      signInWithEmailAndPassword(auth, emailValue, password)
+        .then((userCredential) => {
+          // Signed in
+        })
+        .catch((error) => {
+          seterrorMessage(`${error.code}: ${error.message}`);
+        });
+    }
   };
   return (
     <div>
@@ -15,7 +51,10 @@ const Login = () => {
           alt="bg"
         />
       </div>
-      <form className="w-3/12 absolute p-12 bg-black my-36 mx-auto right-0 left-0 text-white rounded-lg  bg-opacity-80">
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className="w-3/12 absolute p-12 bg-black my-36 mx-auto right-0 left-0 text-white rounded-lg  bg-opacity-80"
+      >
         <h1 className="font-bold  py-4">
           {isSignInForm ? "Sign In" : "Sign Up"}
         </h1>
@@ -27,16 +66,22 @@ const Login = () => {
           />
         )}
         <input
+          ref={email}
           type="text"
           placeholder="Email Address"
           className="p-4 my-4 w-full bg-gray-600 rounded-lg"
         />
         <input
+          ref={pass}
           type="password"
           placeholder="Password"
           className="p-4 my-4 w-full bg-gray-600 rounded-lg"
         />
-        <button className="p-4 my-6 bg-red-700 w-full rounded-lg text-lg">
+        <p className="text-red-500 text-sm font-bold">{errorMessage}</p>
+        <button
+          className="p-4 my-6 bg-red-700 w-full rounded-lg text-lg"
+          onClick={handleButtonClick}
+        >
           {isSignInForm ? "Sign In" : "Sign Up"}
         </button>
         {isSignInForm ? (
